@@ -1,5 +1,8 @@
 package cz.cuni.mff.d3s.tss;
 
+import java.util.LinkedList;
+import java.util.List;
+
 public class TimeSeries {
 	
 
@@ -12,6 +15,9 @@ public class TimeSeries {
 	 * WindowSize - The time period to accumulate the samples within together. (in milliseconds)
 	 */
 	private final int WindowSize;
+	
+	private LinkedList<Double> samples; // TODO: this was added to test the ARIMA method
+	private LinkedList<Integer> times; // TODO: this was added to test the ARIMA method
 	
 	private int time; // time in ms
 	private int index;
@@ -36,6 +42,9 @@ public class TimeSeries {
 		
 		time = 0;
 		index = 0;
+		
+		samples = new LinkedList<>();
+		times = new LinkedList<>();
 
 		sampleCounts = new int[WindowCnt];
 		sampleSum = new double[WindowCnt];
@@ -83,6 +92,15 @@ public class TimeSeries {
 			totalSampleTimeSum -= sampleTimeSum[index];
 			sampleTimeSum[index] = 0;
 						
+		}
+
+		samples.add(sample);
+		if(samples.size() > WindowCnt*WindowSize) {
+			samples.removeFirst();
+		}
+		times.add(sampleTime);
+		if(times.size() > WindowCnt*WindowSize) {
+			times.removeFirst();
 		}
 
 		totalSampleCounts += 1;
@@ -253,22 +271,6 @@ public class TimeSeries {
 		return denom != 0 ? (e2 / (n-2)) * (1.0 / n + pAvgX * pAvgX / denom) : Double.NaN;
 	}
 
-	/*private double computeSum(double samples[]) {
-		double s = 0;
-		for (int i = 0; i < WindowCnt; ++i) {
-			s += samples[i];
-		}
-		return s;
-	}
-
-	private int computeSum(int samples[]) {
-		int s = 0;
-		for (int i = 0; i < WindowCnt; ++i) {
-			s += samples[i];
-		}
-		return s;
-	}*/
-
 	private double computeEpsilonSquaredSum(double a, double b, int n) {
 		if (n <= 2) {
 			return Double.NaN;
@@ -283,4 +285,18 @@ public class TimeSeries {
 		return y2 + n*a*a + b*b*x2 - 2*a*y - 2*b*xy + 2*a*b*x;
 	}
 
+	
+	public double[] getSamples() {
+		double result[] = new double[samples.size()];
+		int i = 0;
+		for(Double s : samples) {
+			result[i] = s;
+			i++;
+		}
+		return result;
+	}
+	
+	public List<Integer> getTimes() {
+		return times;
+	}
 }
