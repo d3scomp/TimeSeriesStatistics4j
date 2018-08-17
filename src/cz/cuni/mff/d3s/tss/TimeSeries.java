@@ -3,6 +3,9 @@ package cz.cuni.mff.d3s.tss;
 import java.util.LinkedList;
 import java.util.List;
 
+import cz.cuni.mff.d3s.tss.arima.ArimaModel;
+import cz.cuni.mff.d3s.tss.arima.ArimaOrder;
+
 public class TimeSeries {
 	
 
@@ -16,8 +19,10 @@ public class TimeSeries {
 	 */
 	private final int WindowSize;
 	
-	private LinkedList<Double> samples; // TODO: this was added to test the ARIMA method
-	private LinkedList<Integer> times; // TODO: this was added to test the ARIMA method
+	private final ArimaOrder arimaOrder;
+	
+	private LinkedList<Double> samples;
+	private LinkedList<Integer> times;
 	
 	private int time; // time in ms
 	private int index;
@@ -37,8 +42,13 @@ public class TimeSeries {
 
 	
 	public TimeSeries(int windowCnt, int windowSize) {
+		this(windowCnt, windowSize, 0, 0, 0);
+	}
+	
+	public TimeSeries(int windowCnt, int windowSize, int arimaP, int arimaD, int arimaQ) {
 		this.WindowCnt = windowCnt;
 		this.WindowSize = windowSize;
+		this.arimaOrder = new ArimaOrder(arimaP, arimaD, arimaQ);
 		
 		time = 0;
 		index = 0;
@@ -166,7 +176,49 @@ public class TimeSeries {
 
 		return new StudentsDistribution(sampleCnt-2, mean, variance);
 	}
+	
+	/**
+	 * Test if future value in time (now + futureOffset) predicted by ARIMA model
+	 * is above the given threshold.
+	 * 
+	 * @param threshold The threshold that is compared with the predicted future value.
+	 * @param futureOffset The time offset from now.
+	 * @param confidence The confidence level of the answer.
+	 * @return True if the future value in time (now + futureOffset) is above the threshold
+	 * with given confidence.
+	 */
+	public boolean afAbove(double threshold, int futureOffset, TTable.ALPHAS confidence) {
+		double[] prediction = ArimaModel.getArimaForecastLowerBound(getSamples(), futureOffset, arimaOrder, confidence);
+		return prediction[prediction.length - 1] > threshold;
+	}
+	
+	/**
+	 * Test if future value in time (now + futureOffset) predicted by ARIMA model
+	 * is below the given threshold.
+	 * 
+	 * @param threshold The threshold that is compared with the predicted future value.
+	 * @param futureOffset The time offset from now.
+	 * @param confidence The confidence level of the answer.
+	 * @return True if the future value in time (now + futureOffset) is below the threshold
+	 * with given confidence.
+	 */
+	public boolean afBelow(double threshold, int futureOffset, TTable.ALPHAS confidence) {
+		double[] prediction = ArimaModel.getArimaForecastUpperBound(getSamples(), futureOffset, arimaOrder, confidence);
+		return prediction[prediction.length - 1] < threshold;
+	}
 
+	/**
+	 * Returns the future value in time (now + futureOffset) predicted by ARIMA model.
+	 * 
+	 * @param futureOffset The time offset from now.
+	 * @param confidence The confidence level of the answer.
+	 * @return The predicted future value in time (now + futureOffset) with given confidence.
+	 */
+	public double afValue(int futureOffset, TTable.ALPHAS confidence) {
+		double[] prediction = ArimaModel.getArimaForecast(getSamples(), futureOffset, arimaOrder, confidence);
+		return prediction[prediction.length - 1];
+	}
+	
 
 	private int nextIndex() {
 		return (index + 1) % WindowCnt;

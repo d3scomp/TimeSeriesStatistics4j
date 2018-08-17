@@ -1,42 +1,41 @@
 package cz.cuni.mff.d3s.tss.arima;
 
-import cz.cuni.mff.d3s.tss.TimeSeries;
+import com.github.signaflo.timeseries.forecast.Forecast;
+import com.github.signaflo.timeseries.model.arima.Arima;
+import com.github.signaflo.timeseries.TimeSeries;
+
+import cz.cuni.mff.d3s.tss.TTable;
 
 
-/**
- * A numerical description of an ARIMA model.
- *
- */
 public class ArimaModel {
-	final double sigma2;
-    private final double logLikelihood;
-    private final double aic;
-    private final double[] residuals;
-    private final double[] fitted;
 
-    /**
-     * Create new model information with the given data.
-     *
-     * @param npar          the number of parameters estimated in the model.
-     * @param sigma2        an estimate of the model variance.
-     * @param logLikelihood the natural logarithms of the likelihood of the model parameters.
-     * @param residuals     the difference between the observations and the fitted values.
-     * @param fitted        the values fitted by the model to the data.
-     */
-    ArimaModel(final int npar, final double sigma2, final double logLikelihood,
-                     final double[] residuals, final double[] fitted) {
-        this.sigma2 = sigma2;
-        this.logLikelihood = logLikelihood;
-        this.aic = 2 * npar - 2 * logLikelihood;
-        this.residuals = residuals.clone();
-        this.fitted = fitted.clone();
-    }
-
-	public double[] getResiduals() {
-		return residuals;
+	public static double[] getArimaForecast(double[] samples, int forecast_length, ArimaOrder order, TTable.ALPHAS confidence) {
+		com.github.signaflo.timeseries.TimeSeries series = com.github.signaflo.timeseries.TimeSeries.from(samples);
+		
+		Arima model = Arima.model(series, order.getOrder());
+		Forecast forecast = model.forecast(forecast_length, confidence.getValue());
+		TimeSeries forecastSeries = forecast.pointEstimates();
+		
+		return forecastSeries.asArray();
 	}
 	
-	public double[] getFitted() {
-		return fitted;
+	public static double[] getArimaForecastLowerBound(double[] samples, int forecast_length, ArimaOrder order, TTable.ALPHAS confidence) {
+		com.github.signaflo.timeseries.TimeSeries series = com.github.signaflo.timeseries.TimeSeries.from(samples);
+		
+		Arima model = Arima.model(series, order.getOrder());
+		Forecast forecast = model.forecast(forecast_length, confidence.getValue());
+		TimeSeries forecastSeries = forecast.lowerPredictionInterval();
+		
+		return forecastSeries.asArray();
+	}
+	
+	public static double[] getArimaForecastUpperBound(double[] samples, int forecast_length, ArimaOrder order, TTable.ALPHAS confidence) {
+		com.github.signaflo.timeseries.TimeSeries series = com.github.signaflo.timeseries.TimeSeries.from(samples);
+		
+		Arima model = Arima.model(series, order.getOrder());
+		Forecast forecast = model.forecast(forecast_length, confidence.getValue());
+		TimeSeries forecastSeries = forecast.upperPredictionInterval();
+		
+		return forecastSeries.asArray();
 	}
 }

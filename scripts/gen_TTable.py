@@ -63,6 +63,10 @@ if len(alphas) == 0:
 
 dotToUnderscore = re.compile('\.')
 
+enumAlphas = []
+for alpha in alphas:
+	enumAlphas.append('ALPHA_{}({})'.format(dotToUnderscore.sub('_', str(alpha)), alpha))
+
 out = open('../src/cz/cuni/mff/d3s/tss/TTable.java', 'w')
 out.write('''/*
  * TTable.java
@@ -76,7 +80,19 @@ package cz.cuni.mff.d3s.tss;
 
 public class TTable {{
 
-	public enum ALPHAS {{{0}}};
+	public enum ALPHAS {{
+		{0};
+	
+		private final double value;
+	
+		ALPHAS(double value) {{
+			this.value = value;
+		}}
+		
+		public double getValue() {{
+			return value;
+		}}
+	}};
 
 
 	public static final int minor_count = {1};
@@ -88,7 +104,7 @@ public class TTable {{
 	}};
 }}
 '''.format(
-	', '.join(['ALPHA_' + dotToUnderscore.sub('_', str(alpha)) for alpha in alphas]),
+	',\n\t\t'.join(enumAlphas),
 	minorCount, boost, dfMax, 
 	',\n\n'.join( ['\t\t\t{' + ','.join([str(val) for val in getICDFTable(alpha)]) + '}' for alpha in alphas] )
 ))
