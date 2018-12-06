@@ -1,41 +1,58 @@
 package cz.cuni.mff.d3s.tss.arima;
 
+import com.github.signaflo.timeseries.TimeSeries;
 import com.github.signaflo.timeseries.forecast.Forecast;
 import com.github.signaflo.timeseries.model.arima.Arima;
-import com.github.signaflo.timeseries.TimeSeries;
-
-import cz.cuni.mff.d3s.tss.TTable;
 
 
 public class ArimaModel {
 
-	public static double[] getArimaForecast(double[] samples, int forecast_length, ArimaOrder order, TTable.ALPHAS confidence) {
-		com.github.signaflo.timeseries.TimeSeries series = com.github.signaflo.timeseries.TimeSeries.from(samples);
+	private final Arima model;
+	
+	public ArimaModel(double[] samples, int seasonalCycle, ArimaOrder order) {
+		com.github.signaflo.timeseries.TimeSeries series = 
+				com.github.signaflo.timeseries.TimeSeries.from(samples);
+		model = Arima.model(series, order.getOrder());
+	}
 		
-		Arima model = Arima.model(series, order.getOrder());
-		Forecast forecast = model.forecast(forecast_length, confidence.getValue());
+	public double[] getForecast(int forecastLength) {
+		Forecast forecast = model.forecast(forecastLength);
 		TimeSeries forecastSeries = forecast.pointEstimates();
 		
 		return forecastSeries.asArray();
 	}
 	
-	public static double[] getArimaForecastLowerBound(double[] samples, int forecast_length, ArimaOrder order, TTable.ALPHAS confidence) {
-		com.github.signaflo.timeseries.TimeSeries series = com.github.signaflo.timeseries.TimeSeries.from(samples);
-		
-		Arima model = Arima.model(series, order.getOrder());
-		Forecast forecast = model.forecast(forecast_length, confidence.getValue());
+	public double getForecastValue(int timeOffset) {
+		return getForecast(timeOffset+1)[timeOffset];
+	}
+	
+	public double[] getForecastLowerBound(int forecastLength) {
+		Forecast forecast = model.forecast(forecastLength);
 		TimeSeries forecastSeries = forecast.lowerPredictionInterval();
 		
 		return forecastSeries.asArray();
 	}
 	
-	public static double[] getArimaForecastUpperBound(double[] samples, int forecast_length, ArimaOrder order, TTable.ALPHAS confidence) {
-		com.github.signaflo.timeseries.TimeSeries series = com.github.signaflo.timeseries.TimeSeries.from(samples);
-		
-		Arima model = Arima.model(series, order.getOrder());
-		Forecast forecast = model.forecast(forecast_length, confidence.getValue());
+	public double getForecastLowerBoundValue(int timeOffset) {
+		return getForecastLowerBound(timeOffset+1)[timeOffset];
+	}
+	
+	public double[] getForecastUpperBound(int forecastLength) {
+		Forecast forecast = model.forecast(forecastLength);
 		TimeSeries forecastSeries = forecast.upperPredictionInterval();
 		
 		return forecastSeries.asArray();
+	}
+	
+	public double getForecastUpperBoundValue(int timeOffset) {
+		return getForecastUpperBound(timeOffset+1)[timeOffset];
+	}
+	
+	public boolean isForecastValueAbove(int timeOffset, double threshold) {
+		return getForecastLowerBoundValue(timeOffset) > threshold;
+	}
+
+	public boolean isForecastValueBelow(int timeOffset, double threshold) {
+		return getForecastUpperBoundValue(timeOffset) < threshold;
 	}
 }
